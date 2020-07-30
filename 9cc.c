@@ -18,13 +18,30 @@ typedef struct Token Token;
 struct Token{
 	TokenKind kind;
 	Token *next;
-	int val; // if token kind is number
+	int val;
 	char *str;
 };
 
 // current token
 Token *token;
 
+char *user_input;
+
+void error_at(char *loc, char *fmt, ...){
+	va_list ap;
+	va_start(ap, fmt);
+
+	int pos = loc - user_input;
+	fprintf(stderr, "%s\n", user_input);
+	fprintf(stderr, "%*s", pos, "");
+	fprintf(stderr, "^");
+	vfprintf(stderr, fmt, ap);
+	fprintf(stderr, "\n");
+	exit(1);
+}
+
+
+// error reporting function
 void error(char *fmt, ...){
 	va_list ap;
 	va_start(ap, fmt);
@@ -33,9 +50,9 @@ void error(char *fmt, ...){
 	exit(1);
 }
 
-// if the next token is reserved operator,
-// read forward next token and return true.
-// otherwise return false.
+// if the next token is reserved one,
+// read one step ahead and return true.
+// else return false.
 bool consume(char op){
 	if(token->kind != TK_RESERVED || token->str[0] != op)
 		return false;
@@ -43,19 +60,18 @@ bool consume(char op){
 	return true;
 }
 
-// if the next token is expected operator,
-// read forward next token. otherwise output error.
 void expect(char op){
 	if(token->kind != TK_RESERVED || token->str[0] != op)
-		error("is not '%c'", op);
+		error_at(token->str, "not %c", op);
 	token = token->next;
 }
 
-// if the next token is number, read forward next token
-// and return the value of the number. otherwise output error.
+// if the next token is not a number, report error.
+// if it is a number, read ahead token
+// and return the value.
 int expect_number(){
 	if(token->kind != TK_NUM)
-		error("is not number");
+		error_at(token->str, "not number");
 	int val = token->val;
 	token = token->next;
 	return val;
@@ -74,7 +90,7 @@ Token *new_token(TokenKind kind, Token *cur, char *str){
 	return tok;
 }
 
-// tokenize string p and return the resulted token list
+// tokenize string p and return it
 Token *tokenize(char *p){
 	Token head;
 	head.next = NULL;
@@ -97,7 +113,7 @@ Token *tokenize(char *p){
 			cur->val = strtol(p, &p, 10);
 			continue;
 		}
-		
+
 		error("failed to tokenize");
 	}
 
@@ -106,39 +122,39 @@ Token *tokenize(char *p){
 }
 
 int main(int argc, char **argv){
+	user_input = argv[1];
 	if(argc != 2){
 		error("invalid num of args");
 		return 1;
 	}
 
+	// tokenize
 	token = tokenize(argv[1]);
 
 	// output header of assembly
 	printf(".intel_syntax noprefix\n");
 	printf(".globl main\n");
 	printf("main:\n");
-	
-	// expression must start with number.
-	// check that and output first mov
-	printf("  mov rax, %d\n", expect_number());
 
-	// consuming token of `+ num` or `- num`
-	// and output assembly
+	// check that first token is number
+	// output mov operation with the number
+	printf(" mov rax, %d\n", expect_number());
+
+	//
 	while(!at_eof()){
 		if(consume('+')){
-			printf("  add rax, %d\n", expect_number());
+			printf(" add rax, %d\n", expect_number());
 			continue;
 		}
 
 		expect('-');
-		printf("  sub rax, %d\n", expect_number());
+		printf(" sub rax, %d\n", expect_number());
 	}
 
-	printf("  ret\n");
+	printf(" ret\n");
 	return 0;
 }
-
-
+		
 
 
 
