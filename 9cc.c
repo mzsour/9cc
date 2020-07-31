@@ -40,6 +40,20 @@ struct Node{
 	int val;
 };
 
+Node *new_node(NodeKind kind, Node *lhs, Node *rhs);
+Node *new_node_num(int val);
+void error_at(char *loc, char *fmt, ...);
+void error(char *fmt, ...);
+bool consume(char op);
+void expect(char op);
+int expect_number();
+bool at_eof();
+Token *new_token(TokenKind kind, Token *cur, char *str);
+Token *tokenize(char *p);
+Node *primary();
+Node *expr();
+void gen(Node *node);
+
 Node *new_node(NodeKind kind, Node *lhs, Node *rhs){
 	Node *node = calloc(1, sizeof(Node));
 	node->kind = kind;
@@ -133,7 +147,7 @@ Token *tokenize(char *p){
 			continue;
 		}
 
-		if(*p == '+' || *p == '-'){
+		if(*p=='+'||*p=='-'||*p=='('||*p==')'){
 			cur = new_token(TK_RESERVED, cur, p++);
 			continue;
 		}
@@ -150,15 +164,27 @@ Token *tokenize(char *p){
 	new_token(TK_EOF, cur, p);
 	return head.next;
 }
+
 // parser
+Node *primary(){
+	// if next token is '(', '('expr')' should follow.
+	if(consume('(')){
+		Node *node = expr();
+		expect(')');
+		return node;
+	}
+	// otherwise, the token should be number.
+	return new_node_num(expect_number());
+}
+
 Node *expr(){
-	Node *node = new_node_num(expect_number());
+	Node *node = primary();
 
 	for(;;){
 		if(consume('+'))
-			node = new_node(ND_ADD, node, new_node_num(expect_number()));
+			node = new_node(ND_ADD, node, primary());
 		else if(consume('-'))
-			node = new_node(ND_SUB, node, new_node_num(expect_number()));
+			node = new_node(ND_SUB, node, primary());
 		else
 			return node;
 	}
