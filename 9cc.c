@@ -32,7 +32,6 @@ typedef enum{
 	ND_DIV,
 	ND_NUM,
 	ND_GT,
-	ND_LT,
 } NodeKind;
 
 typedef struct Node Node;
@@ -224,7 +223,8 @@ Node *relational(){
 		if(consume('>'))
 			node = new_node(ND_GT, node, add());
 		else if(consume('<'))
-			node = new_node(ND_LT, node, add());
+			// use GT and switch left and right.
+			node = new_node(ND_GT, add(), node);
 		else
 			return node;
 	}
@@ -252,11 +252,6 @@ void gen(Node *node){
 	case ND_GT:
 		printf(" cmp rax, rdi\n");
 		printf(" setg al\n");
-		printf(" movzb rax, al\n");
-		break;
-	case ND_LT:
-		printf(" cmp rax, rdi\n");
-		printf(" setl al\n");
 		printf(" movzb rax, al\n");
 		break;
 	case ND_ADD:
