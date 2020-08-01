@@ -31,6 +31,8 @@ typedef enum{
 	ND_MUL,
 	ND_DIV,
 	ND_NUM,
+	ND_GT,
+	ND_LT,
 } NodeKind;
 
 typedef struct Node Node;
@@ -54,6 +56,8 @@ Token *new_token(TokenKind kind, Token *cur, char *str);
 Token *tokenize(char *p);
 Node *primary();
 Node *mul();
+Node *add();
+Node *relational();
 Node *expr();
 void gen(Node *node);
 
@@ -149,7 +153,7 @@ Token *tokenize(char *p){
 			continue;
 		}
 
-		if(*p=='+'||*p=='-'||*p=='*'||*p=='/'||*p=='('||*p==')'){
+		if(*p=='+'||*p=='-'||*p=='*'||*p=='/'||*p=='>'||*p=='<'||*p=='('||*p==')'){
 			cur = new_token(TK_RESERVED, cur, p++);
 			continue;
 		}
@@ -200,7 +204,7 @@ Node *mul(){
 	}
 }
 
-Node *expr(){
+Node *add(){
 	Node *node = mul();
 
 	for(;;){
@@ -211,6 +215,24 @@ Node *expr(){
 		else
 			return node;
 	}
+}
+
+Node *relational(){
+	Node *node = add();
+
+	for(;;){
+		if(consume('>'))
+			node = new_node(ND_GT, node, add());
+		else if(consume('<'))
+			node = new_node(ND_LT, node, add());
+		else
+			return node;
+	}
+}
+
+Node *expr(){
+	Node *node = relational();
+	return node;
 }
 
 // generator
@@ -227,6 +249,16 @@ void gen(Node *node){
 	printf(" pop rax\n");
 
 	switch(node->kind){
+	case ND_GT:
+		printf(" cmp rax, rdi\n");
+		printf(" setg al\n");
+		printf(" movzb rax, al\n");
+		break;
+	case ND_LT:
+		printf(" cmp rax, rdi\n");
+		printf(" setl al\n");
+		printf(" movzb rax, al\n");
+		break;
 	case ND_ADD:
 		printf(" add rax, rdi\n");
 		break;

@@ -33,4 +33,8 @@ assert 3 "(3+9) / 4"
 assert 3 " 11 / 3"
 assert 70 "(17-3)*(+5)"
 assert 2 "-3*+5+17"
+assert 1 "5>3"
+assert 1 "4 < 16"
+assert 0 "5>30"
+assert 0 "4 < -16"
 echo OK
