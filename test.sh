@@ -37,4 +37,6 @@ assert 1 "5>3"
 assert 1 "4 < 16"
 assert 0 "5>30"
 assert 0 "4 < -16"
+assert 1 " 1 + 1 == 2"
+assert 0 " (2*4) + 1 == 0"
 echo OK

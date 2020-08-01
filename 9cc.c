@@ -20,6 +20,7 @@ struct Token{
 	Token *next;
 	int val;
 	char *str;
+	int len;
 };
 
 // current token
@@ -31,6 +32,7 @@ typedef enum{
 	ND_MUL,
 	ND_DIV,
 	ND_NUM,
+	ND_EQ,
 	ND_GT,
 } NodeKind;
 
@@ -47,16 +49,17 @@ Node *new_node(NodeKind kind, Node *lhs, Node *rhs);
 Node *new_node_num(int val);
 void error_at(char *loc, char *fmt, ...);
 void error(char *fmt, ...);
-bool consume(char op);
-void expect(char op);
+bool consume(char *op);
+void expect(char *op);
 int expect_number();
 bool at_eof();
-Token *new_token(TokenKind kind, Token *cur, char *str);
+Token *new_token(TokenKind kind, Token *cur, char *str, int len);
 Token *tokenize(char *p);
 Node *primary();
 Node *mul();
 Node *add();
 Node *relational();
+Node *equality();
 Node *expr();
 void gen(Node *node);
 
@@ -102,15 +105,19 @@ void error(char *fmt, ...){
 // if the next token is reserved one,
 // read one step ahead and return true.
 // else return false.
-bool consume(char op){
-	if(token->kind != TK_RESERVED || token->str[0] != op)
+bool consume(char *op){
+	if(token->kind != TK_RESERVED ||
+		strlen(op) != token->len ||
+		memcmp(token->str, op, token->len))
 		return false;
 	token = token->next;
 	return true;
 }
 
-void expect(char op){
-	if(token->kind != TK_RESERVED || token->str[0] != op)
+void expect(char *op){
+	if(token->kind != TK_RESERVED ||
+		strlen(op) != token->len ||
+		memcmp(token->str, op, token->len))
 		error_at(token->str, "not %c", op);
 	token = token->next;
 }
@@ -131,11 +138,12 @@ bool at_eof(){
 }
 
 // create new token and connect it to cur
-Token *new_token(TokenKind kind, Token *cur, char *str){
+Token *new_token(TokenKind kind, Token *cur, char *str, int len){
 	Token *tok = calloc(1, sizeof(Token));
 	tok->kind = kind;
 	tok->str = str;
 	cur->next = tok;
+	tok->len = len;
 	return tok;
 }
 
@@ -152,13 +160,19 @@ Token *tokenize(char *p){
 			continue;
 		}
 
+		if(strncmp(p, "==", 2) == 0){
+			cur = new_token(TK_RESERVED, cur, p, 2);
+			p = p + 2;
+			continue;
+		}
+
 		if(*p=='+'||*p=='-'||*p=='*'||*p=='/'||*p=='>'||*p=='<'||*p=='('||*p==')'){
-			cur = new_token(TK_RESERVED, cur, p++);
+			cur = new_token(TK_RESERVED, cur, p++, 1);
 			continue;
 		}
 
 		if(isdigit(*p)){
-			cur = new_token(TK_NUM, cur, p);
+			cur = new_token(TK_NUM, cur, p, 0);
 			cur->val = strtol(p, &p, 10);
 			continue;
 		}
@@ -166,16 +180,17 @@ Token *tokenize(char *p){
 		error("failed to tokenize");
 	}
 
-	new_token(TK_EOF, cur, p);
+	new_token(TK_EOF, cur, p, 0);
 	return head.next;
 }
+
 
 // parser
 Node *primary(){
 	// if next token is '(', '('expr')' should follow.
-	if(consume('(')){
+	if(consume("(")){
 		Node *node = expr();
-		expect(')');
+		expect(")");
 		return node;
 	}
 	// otherwise, the token should be number.
@@ -183,9 +198,9 @@ Node *primary(){
 }
 
 Node *unary(){
-	if(consume('+'))
+	if(consume("+"))
 		return primary();
-	if(consume('-'))
+	if(consume("-"))
 		return new_node(ND_SUB, new_node_num(0), primary());
 	return primary();
 }
@@ -194,9 +209,9 @@ Node *mul(){
 	Node *node = unary();
 
 	for(;;){
-		if(consume('*'))
+		if(consume("*"))
 			node = new_node(ND_MUL, node, unary());
-		else if(consume('/'))
+		else if(consume("/"))
 			node = new_node(ND_DIV, node, unary());
 		else
 			return node;
@@ -207,9 +222,9 @@ Node *add(){
 	Node *node = mul();
 
 	for(;;){
-		if(consume('+'))
+		if(consume("+"))
 			node = new_node(ND_ADD, node, mul());
-		else if(consume('-'))
+		else if(consume("-"))
 			node = new_node(ND_SUB, node, mul());
 		else
 			return node;
@@ -220,9 +235,9 @@ Node *relational(){
 	Node *node = add();
 
 	for(;;){
-		if(consume('>'))
+		if(consume(">"))
 			node = new_node(ND_GT, node, add());
-		else if(consume('<'))
+		else if(consume("<"))
 			// use GT and switch left and right.
 			node = new_node(ND_GT, add(), node);
 		else
@@ -230,8 +245,18 @@ Node *relational(){
 	}
 }
 
-Node *expr(){
+Node *equality(){
 	Node *node = relational();
+	for(;;){
+		if(consume("=="))
+			node = new_node(ND_EQ, node, relational());
+		else
+			return node;
+	}
+}
+
+Node *expr(){
+	Node *node = equality();
 	return node;
 }
 
@@ -249,6 +274,11 @@ void gen(Node *node){
 	printf(" pop rax\n");
 
 	switch(node->kind){
+	case ND_EQ:
+		printf(" cmp rax, rdi\n");
+		printf(" sete al\n");
+		printf(" movzb rax, al\n");
+		break;
 	case ND_GT:
 		printf(" cmp rax, rdi\n");
 		printf(" setg al\n");
