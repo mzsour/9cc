@@ -33,6 +33,7 @@ typedef enum{
 	ND_DIV,
 	ND_NUM,
 	ND_EQ,
+	ND_NE,
 	ND_GT,
 	ND_GE,
 } NodeKind;
@@ -162,6 +163,7 @@ Token *tokenize(char *p){
 		}
 
 		if(strncmp(p, "==", 2) == 0 ||
+			strncmp(p, "!=", 2) == 0 ||
 			strncmp(p, ">=", 2) == 0 ||
 			strncmp(p, "<=", 2) == 0){
 			cur = new_token(TK_RESERVED, cur, p, 2);
@@ -257,6 +259,8 @@ Node *equality(){
 	for(;;){
 		if(consume("=="))
 			node = new_node(ND_EQ, node, relational());
+		else if(consume("!="))
+			node = new_node(ND_NE, node, relational());
 		else
 			return node;
 	}
@@ -284,6 +288,11 @@ void gen(Node *node){
 	case ND_EQ:
 		printf(" cmp rax, rdi\n");
 		printf(" sete al\n");
+		printf(" movzb rax, al\n");
+		break;
+	case ND_NE:
+		printf(" cmp rax, rdi\n");
+		printf(" setne al\n");
 		printf(" movzb rax, al\n");
 		break;
 	case ND_GT:
