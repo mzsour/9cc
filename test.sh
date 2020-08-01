@@ -27,4 +27,8 @@ assert 51 "10 - 9 + 50"
 assert 6 "1+(2+3)"
 assert 4 "((4+2)-((1)+(2-1)))"
 assert 5 "6+(3-4)"
+assert 26 "2* 3* 4 + 2"
+assert 14 " 2 * (3 +4)"
+assert 3 "(3+9) / 4"
+assert 3 " 11 / 3"
 echo OK

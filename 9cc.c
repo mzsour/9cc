@@ -28,6 +28,8 @@ Token *token;
 typedef enum{
 	ND_ADD,
 	ND_SUB,
+	ND_MUL,
+	ND_DIV,
 	ND_NUM,
 } NodeKind;
 
@@ -51,6 +53,7 @@ bool at_eof();
 Token *new_token(TokenKind kind, Token *cur, char *str);
 Token *tokenize(char *p);
 Node *primary();
+Node *mul();
 Node *expr();
 void gen(Node *node);
 
@@ -83,7 +86,6 @@ void error_at(char *loc, char *fmt, ...){
 	fprintf(stderr, "\n");
 	exit(1);
 }
-
 
 // error reporting function
 void error(char *fmt, ...){
@@ -147,7 +149,7 @@ Token *tokenize(char *p){
 			continue;
 		}
 
-		if(*p=='+'||*p=='-'||*p=='('||*p==')'){
+		if(*p=='+'||*p=='-'||*p=='*'||*p=='/'||*p=='('||*p==')'){
 			cur = new_token(TK_RESERVED, cur, p++);
 			continue;
 		}
@@ -177,14 +179,27 @@ Node *primary(){
 	return new_node_num(expect_number());
 }
 
-Node *expr(){
+Node *mul(){
 	Node *node = primary();
 
 	for(;;){
+		if(consume('*'))
+			node = new_node(ND_MUL, node, primary());
+		else if(consume('/'))
+			node = new_node(ND_DIV, node, primary());
+		else
+			return node;
+	}
+}
+
+Node *expr(){
+	Node *node = mul();
+
+	for(;;){
 		if(consume('+'))
-			node = new_node(ND_ADD, node, primary());
+			node = new_node(ND_ADD, node, mul());
 		else if(consume('-'))
-			node = new_node(ND_SUB, node, primary());
+			node = new_node(ND_SUB, node, mul());
 		else
 			return node;
 	}
@@ -209,13 +224,17 @@ void gen(Node *node){
 		break;
 	case ND_SUB:
 		printf(" sub rax, rdi\n");
+		break;
+	case ND_MUL:
+		printf(" imul rax, rdi\n");
+		break;
+	case ND_DIV:
+		printf(" cqo\n");
+		printf(" idiv rdi\n");
+		break;
 	}
 	printf(" push rax\n");
 }
-
-
-
-
 
 int main(int argc, char **argv){
 	if(argc != 2){
