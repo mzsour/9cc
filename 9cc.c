@@ -34,6 +34,7 @@ typedef enum{
 	ND_NUM,
 	ND_EQ,
 	ND_GT,
+	ND_GE,
 } NodeKind;
 
 typedef struct Node Node;
@@ -160,7 +161,9 @@ Token *tokenize(char *p){
 			continue;
 		}
 
-		if(strncmp(p, "==", 2) == 0){
+		if(strncmp(p, "==", 2) == 0 ||
+			strncmp(p, ">=", 2) == 0 ||
+			strncmp(p, "<=", 2) == 0){
 			cur = new_token(TK_RESERVED, cur, p, 2);
 			p = p + 2;
 			continue;
@@ -240,6 +243,10 @@ Node *relational(){
 		else if(consume("<"))
 			// use GT and switch left and right.
 			node = new_node(ND_GT, add(), node);
+		else if(consume(">="))
+			node = new_node(ND_GE, node, add());
+		else if(consume("<="))
+			node = new_node(ND_GE, add(), node);
 		else
 			return node;
 	}
@@ -282,6 +289,11 @@ void gen(Node *node){
 	case ND_GT:
 		printf(" cmp rax, rdi\n");
 		printf(" setg al\n");
+		printf(" movzb rax, al\n");
+		break;
+	case ND_GE:
+		printf(" cmp rax, rdi\n");
+		printf(" setge al\n");
 		printf(" movzb rax, al\n");
 		break;
 	case ND_ADD:
