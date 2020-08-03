@@ -104,7 +104,7 @@ Token *tokenize(char *p){
 			continue;
 		}
 
-		if(*p=='+'||*p=='-'||*p=='*'||*p=='/'||*p=='>'||*p=='<'||*p=='('||*p==')'||*p=='='){
+		if(*p=='+'||*p=='-'||*p=='*'||*p=='/'||*p=='>'||*p=='<'||*p=='('||*p==')'||*p==';'){
 			cur = new_token(TK_RESERVED, cur, p++, 1);
 			continue;
 		}
@@ -202,5 +202,18 @@ Node *equality(){
 Node *expr(){
 	Node *node = equality();
 	return node;
+}
+
+Node *stmt(){
+	Node *node = expr();
+	expect(";");
+	return node;
+}
+
+void program(){
+	int i = 0;
+	while(!at_eof())
+		code[i++] = stmt();
+	code[i] = NULL;
 }
 
