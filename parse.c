@@ -49,6 +49,14 @@ bool consume(char *op){
 	return true;
 }
 
+Token *consume_ident(){
+	if(token->kind != TK_IDENT)
+		return NULL;
+	Token *res = token;
+	token = token->next;
+	return res;
+}
+
 void expect(char *op){
 	if(token->kind != TK_RESERVED ||
 		strlen(op) != token->len ||
@@ -95,6 +103,12 @@ Token *tokenize(char *p){
 			continue;
 		}
 
+		if('a' <= *p && *p <= 'z'){
+			cur = new_token(TK_IDENT, cur, p++, 1);
+			cur->len = 1;
+			continue;
+		}
+
 		if(strncmp(p, "==", 2) == 0 ||
 			strncmp(p, "!=", 2) == 0 ||
 			strncmp(p, ">=", 2) == 0 ||
@@ -104,7 +118,8 @@ Token *tokenize(char *p){
 			continue;
 		}
 
-		if(*p=='+'||*p=='-'||*p=='*'||*p=='/'||*p=='>'||*p=='<'||*p=='('||*p==')'||*p==';'){
+		if(*p=='+'||*p=='-'||*p=='*'||*p=='/'||*p=='>'||
+			*p=='<'||*p=='('||*p==')'||*p==';'||*p=='='){
 			cur = new_token(TK_RESERVED, cur, p++, 1);
 			continue;
 		}
@@ -125,12 +140,23 @@ Token *tokenize(char *p){
 
 // parser
 Node *primary(){
+
+
+	Token *tok = consume_ident();
+	if(tok){
+		Node *node = calloc(1, sizeof(Node));
+		node->kind = ND_LVAR;
+		node->offset = (tok->str[0] - 'a' + 1) * 8;
+		return node;
+	}
+
 	// if next token is '(', '('expr')' should follow.
 	if(consume("(")){
 		Node *node = expr();
 		expect(")");
 		return node;
 	}
+
 	// otherwise, the token should be number.
 	return new_node_num(expect_number());
 }
@@ -199,9 +225,15 @@ Node *equality(){
 	}
 }
 
-Node *expr(){
+Node *assign(){
 	Node *node = equality();
+	if(consume("="))
+		node = new_node(ND_ASSIGN, node, assign());
 	return node;
+}
+
+Node *expr(){
+	return assign();
 }
 
 Node *stmt(){
@@ -212,8 +244,9 @@ Node *stmt(){
 
 void program(){
 	int i = 0;
-	while(!at_eof())
+	while(!at_eof()){
 		code[i++] = stmt();
+	}
 	code[i] = NULL;
 }
 
