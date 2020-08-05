@@ -1,5 +1,20 @@
 #include "9cc.h"
 
+int is_alphabet(char c){
+	return('a' <= c && c <= 'z') ||
+		('A' <= c && c <= 'Z') ||
+		(c == '_');
+}
+
+LVar *find_lvar(Token *tok){
+	for(LVar *var = locals; var; var = var->next){
+		if(var->len == tok->len && !memcmp(tok->str, var->name, var->len)){
+			return var;
+		}
+	}
+	return NULL;
+}
+
 Node *new_node(NodeKind kind, Node *lhs, Node *rhs){
 	Node *node = calloc(1, sizeof(Node));
 	node->kind = kind;
@@ -103,9 +118,13 @@ Token *tokenize(char *p){
 			continue;
 		}
 
-		if('a' <= *p && *p <= 'z'){
-			cur = new_token(TK_IDENT, cur, p++, 1);
-			cur->len = 1;
+		if(is_alphabet(*p)){
+			int len = 0;
+			while(is_alphabet(*p)){
+				len++;
+				p++;
+			}
+			cur = new_token(TK_IDENT, cur, p - len, len);
 			continue;
 		}
 
@@ -140,13 +159,27 @@ Token *tokenize(char *p){
 
 // parser
 Node *primary(){
-
-
 	Token *tok = consume_ident();
 	if(tok){
 		Node *node = calloc(1, sizeof(Node));
 		node->kind = ND_LVAR;
-		node->offset = (tok->str[0] - 'a' + 1) * 8;
+
+		LVar *lvar = find_lvar(tok);
+		if(lvar){
+			node->offset = lvar->offset;
+		} else {
+			lvar = calloc(1, sizeof(LVar));
+			lvar->next = locals;
+			lvar->name = tok->str;
+			lvar->len = tok->len;
+			if(!locals){
+				lvar->offset = 8;
+			} else {
+				lvar->offset = locals->offset + 8;
+			}
+			node->offset = lvar->offset;
+			locals = lvar;
+		}
 		return node;
 	}
 
