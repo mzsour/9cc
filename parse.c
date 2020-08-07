@@ -78,6 +78,13 @@ bool consume_return(){
 	return true;
 }
 
+bool consume_if(){
+	if(token->kind != TK_IF)
+		return false;
+	token = token->next;
+	return true;
+}
+
 Token *consume_ident(){
 	if(token->kind != TK_IDENT)
 		return NULL;
@@ -138,6 +145,12 @@ Token *tokenize(char *p){
 			continue;
 		}
 
+		if(strncmp(p, "if", 2) == 0 && !is_alnum(p[2])){
+			cur = new_token(TK_IF, cur, p, 2);
+			p += 2;
+			continue;
+		}
+
 		if(is_alphabet(*p)){
 			int len = 0;
 			while(is_alphabet(*p)){
@@ -153,7 +166,7 @@ Token *tokenize(char *p){
 			strncmp(p, ">=", 2) == 0 ||
 			strncmp(p, "<=", 2) == 0){
 			cur = new_token(TK_RESERVED, cur, p, 2);
-			p = p + 2;
+			p += 2;
 			continue;
 		}
 
@@ -286,7 +299,20 @@ Node *assign(){
 }
 
 Node *expr(){
-	return assign();
+	Node *node;
+
+	if(consume_if()){
+		node = calloc(1, sizeof(Node));
+		node->kind = ND_IF;
+		expect("(");
+		node->lhs = assign();
+		expect(")");
+		node->rhs = assign();
+		return node;
+	} else {
+		node = assign();
+		return node;
+	}
 }
 
 Node *stmt(){

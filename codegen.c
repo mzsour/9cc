@@ -38,6 +38,14 @@ void gen(Node *node){
 		printf(" pop rbp\n");
 		printf(" ret\n");
 		return;
+	case ND_IF:
+		gen(node->lhs);
+		printf(" pop rax\n");
+		printf(" cmp rax, 0\n");
+		printf(" je .Lend%d\n", lend_num);
+		gen(node->rhs);
+		printf(".Lend%d:\n", lend_num++);
+		return;
 	}
 
 	gen(node->lhs);

@@ -4,6 +4,7 @@ extern Token *token;
 extern char *user_input;
 extern Node *code[100];
 extern LVar *locals;
+extern int lend_num;
 
 int main(int argc, char **argv){
 	if(argc != 2){
@@ -14,6 +15,7 @@ int main(int argc, char **argv){
 	user_input = argv[1];
 	token = tokenize(user_input);
 	locals = NULL;
+	lend_num = 0;
 
 	program();
 	
