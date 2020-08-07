@@ -56,4 +56,5 @@ assert 10 "hello = 4;hello+6;"
 assert 8 "a=5; q=3; a + q; "
 assert 86 "a=5 ; 9*9+a; "
 assert 12 "hello=4 ; world=3; world*hello; "
+assert 7 "o=4 ; d=3; return o + d; "
 echo OK

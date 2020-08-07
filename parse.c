@@ -6,6 +6,13 @@ int is_alphabet(char c){
 		(c == '_');
 }
 
+int is_alnum(char c){
+	return('a' <= c && c <= 'z') ||
+		('A' <= c && c <= 'Z') ||
+		('0' <= c && c <= '9') ||
+		(c == '_');
+}
+
 LVar *find_lvar(Token *tok){
 	for(LVar *var = locals; var; var = var->next){
 		if(var->len == tok->len && !memcmp(tok->str, var->name, var->len)){
@@ -64,6 +71,13 @@ bool consume(char *op){
 	return true;
 }
 
+bool consume_return(){
+	if(token->kind != TK_RETURN)
+		return false;
+	token = token->next;
+	return true;
+}
+
 Token *consume_ident(){
 	if(token->kind != TK_IDENT)
 		return NULL;
@@ -115,6 +129,12 @@ Token *tokenize(char *p){
 		// skip white spaces
 		if(isspace(*p)){
 			p++;
+			continue;
+		}
+
+		if(strncmp(p, "return", 6) == 0 && !is_alnum(p[6])){
+			cur = new_token(TK_RETURN, cur, p, 6);
+			p += 6;
 			continue;
 		}
 
@@ -270,7 +290,16 @@ Node *expr(){
 }
 
 Node *stmt(){
-	Node *node = expr();
+	Node *node;
+
+	if(consume_return()){
+		node = calloc(1, sizeof(Node));
+		node->kind = ND_RETURN;
+		node->lhs = expr();
+	} else {
+		node = expr();
+	}
+
 	expect(";");
 	return node;
 }
