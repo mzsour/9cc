@@ -60,4 +60,5 @@ assert 7 "o=4 ; d=3; return o + d; "
 assert 8 "a = 4; if(a > 2) a*2;"
 assert 8 "a = 4; if(a > 2) a = a*2;a;"
 assert 4 "a = 4; if(a < 2) a = a*2;a;"
+assert 4 "a = 4; if(a < 2) a*2 else a;"
 echo OK

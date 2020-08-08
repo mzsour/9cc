@@ -46,6 +46,19 @@ void gen(Node *node){
 		gen(node->rhs);
 		printf(".Lend%d:\n", lend_num++);
 		return;
+	case ND_IFEL:
+		gen(node->lhs);
+		printf(" pop rax\n");
+		printf(" cmp rax, 0\n");
+		printf(" je .Lelse%d\n", lelse_num);
+		gen(node->rhs);
+		printf(" jmp .Lend%d\n", lend_num);
+		printf(".Lelse%d:\n", lelse_num);
+		gen(node->third_hand);
+		printf(".Lend%d:\n", lend_num);
+		lelse_num++;
+		lend_num++;
+		return;
 	}
 
 	gen(node->lhs);

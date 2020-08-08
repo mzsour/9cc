@@ -78,6 +78,16 @@ bool consume_return(){
 	return true;
 }
 
+bool search_for_token(int type){
+	Token *t;
+	for(t=token; t->kind != TK_EOF; t=t->next){
+		if(t->kind == type){
+			return true;
+		}
+	}
+	return false;
+}
+
 bool consume_if(){
 	if(token->kind != TK_IF)
 		return false;
@@ -97,7 +107,14 @@ void expect(char *op){
 	if(token->kind != TK_RESERVED ||
 		strlen(op) != token->len ||
 		memcmp(token->str, op, token->len))
-		error_at(token->str, "not %c", op);
+		error_at(token->str, "not %s", op);
+	token = token->next;
+}
+
+void expect_else(){
+	if(token->kind != TK_ELSE){
+		error_at(token->str, "not else");
+	}
 	token = token->next;
 }
 
@@ -142,6 +159,12 @@ Token *tokenize(char *p){
 		if(strncmp(p, "return", 6) == 0 && !is_alnum(p[6])){
 			cur = new_token(TK_RETURN, cur, p, 6);
 			p += 6;
+			continue;
+		}
+
+		if(strncmp(p, "else", 4) == 0 && !is_alnum(p[4])){
+			cur = new_token(TK_ELSE, cur, p, 4);
+			p += 4;
 			continue;
 		}
 
@@ -303,11 +326,19 @@ Node *expr(){
 
 	if(consume_if()){
 		node = calloc(1, sizeof(Node));
-		node->kind = ND_IF;
+		if(search_for_token(TK_ELSE)){
+			node->kind = ND_IFEL;
+		} else {
+			node->kind = ND_IF;
+		}
 		expect("(");
 		node->lhs = assign();
 		expect(")");
 		node->rhs = assign();
+		if(node->kind == ND_IFEL){
+			expect_else();
+			node->third_hand = assign();
+		}
 		return node;
 	} else {
 		node = assign();
