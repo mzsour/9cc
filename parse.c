@@ -173,6 +173,13 @@ Token *tokenize(char *p){
 			continue;
 		}
 
+		if(strncmp(p, "for", 3) == 0 && !is_alnum(p[3])){
+			cur = new_token(TK_FOR, cur, p, 3);
+			p += 3;
+			continue;
+		}
+
+
 		if(is_alphabet(*p)){
 			int len = 0;
 			while(is_alphabet(*p)){
@@ -356,6 +363,29 @@ Node *stmt(){
 		node->lhs = expr();
 		expect(")");
 		node->rhs = stmt();
+	} else if(consume_ctrl(TK_FOR)){
+		node = calloc(1, sizeof(Node));
+		node->kind = ND_FOR;
+		expect("(");
+		if(consume(";")){
+			node->lhs = new_node(ND_NULL, NULL, NULL);
+		} else {
+			node->lhs = expr();
+			expect(";");
+		}
+		if(consume(";")){
+			node->rhs = new_node(ND_NULL, NULL, NULL);
+		} else {
+			node->rhs = expr();
+			expect(";");
+		}
+		if(consume(")")){
+			node->third_hand = new_node(ND_NULL, NULL, NULL);
+		} else {
+			node->third_hand = expr();
+			expect(")");
+		}
+		node->fourth_hand = stmt();
 	} else {
 		node = expr();
 	}
