@@ -61,4 +61,7 @@ assert 8 "a = 4; if(a > 2) a*2;"
 assert 8 "a = 4; if(a > 2) a = a*2;a;"
 assert 4 "a = 4; if(a < 2) a = a*2;a;"
 assert 4 "a = 4; if(a < 2) a*2 else a;"
+assert 44 "i = 4; j = 3; if(i > j) 44 else 33;"
+assert 12 "var = 0; while(var < 10) var = var+3; var;"
+assert 14 "s=2; t=3; u=4; if(t>s) while(u < 10) u = u+5; u;"
 echo OK

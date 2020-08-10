@@ -71,13 +71,6 @@ bool consume(char *op){
 	return true;
 }
 
-bool consume_return(){
-	if(token->kind != TK_RETURN)
-		return false;
-	token = token->next;
-	return true;
-}
-
 bool search_for_token(int type){
 	Token *t;
 	for(t=token; t->kind != TK_EOF; t=t->next){
@@ -88,8 +81,8 @@ bool search_for_token(int type){
 	return false;
 }
 
-bool consume_if(){
-	if(token->kind != TK_IF)
+bool consume_ctrl(int tk_type){
+	if(token->kind != tk_type)
 		return false;
 	token = token->next;
 	return true;
@@ -162,15 +155,21 @@ Token *tokenize(char *p){
 			continue;
 		}
 
+		if(strncmp(p, "if", 2) == 0 && !is_alnum(p[2])){
+			cur = new_token(TK_IF, cur, p, 2);
+			p += 2;
+			continue;
+		}
+
 		if(strncmp(p, "else", 4) == 0 && !is_alnum(p[4])){
 			cur = new_token(TK_ELSE, cur, p, 4);
 			p += 4;
 			continue;
 		}
 
-		if(strncmp(p, "if", 2) == 0 && !is_alnum(p[2])){
-			cur = new_token(TK_IF, cur, p, 2);
-			p += 2;
+		if(strncmp(p, "while", 5) == 0 && !is_alnum(p[5])){
+			cur = new_token(TK_WHILE, cur, p, 5);
+			p += 5;
 			continue;
 		}
 
@@ -324,7 +323,18 @@ Node *assign(){
 Node *expr(){
 	Node *node;
 
-	if(consume_if()){
+	node = assign();
+	return node;
+}
+
+Node *stmt(){
+	Node *node;
+
+	if(consume_ctrl(TK_RETURN)){
+		node = calloc(1, sizeof(Node));
+		node->kind = ND_RETURN;
+		node->lhs = expr();
+	} else if(consume_ctrl(TK_IF)){
 		node = calloc(1, sizeof(Node));
 		if(search_for_token(TK_ELSE)){
 			node->kind = ND_IFEL;
@@ -332,39 +342,34 @@ Node *expr(){
 			node->kind = ND_IF;
 		}
 		expect("(");
-		node->lhs = assign();
+		node->lhs = expr();
 		expect(")");
-		node->rhs = assign();
+		node->rhs = stmt();
 		if(node->kind == ND_IFEL){
 			expect_else();
-			node->third_hand = assign();
+			node->third_hand = stmt();
 		}
-		return node;
-	} else {
-		node = assign();
-		return node;
-	}
-}
-
-Node *stmt(){
-	Node *node;
-
-	if(consume_return()){
+	} else if(consume_ctrl(TK_WHILE)){
 		node = calloc(1, sizeof(Node));
-		node->kind = ND_RETURN;
+		node->kind = ND_WHILE;
+		expect("(");
 		node->lhs = expr();
+		expect(")");
+		node->rhs = stmt();
 	} else {
 		node = expr();
 	}
 
-	expect(";");
 	return node;
 }
 
 void program(){
 	int i = 0;
 	while(!at_eof()){
-		code[i++] = stmt();
+		Node *node;
+		node = stmt();
+		expect(";");
+		code[i++] = node;
 	}
 	code[i] = NULL;
 }

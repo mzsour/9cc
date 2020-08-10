@@ -42,22 +42,32 @@ void gen(Node *node){
 		gen(node->lhs);
 		printf(" pop rax\n");
 		printf(" cmp rax, 0\n");
-		printf(" je .Lend%d\n", lend_num);
+		printf(" je .Lend%d\n", lnum);
 		gen(node->rhs);
-		printf(".Lend%d:\n", lend_num++);
+		printf(".Lend%d:\n", lnum++);
 		return;
 	case ND_IFEL:
 		gen(node->lhs);
 		printf(" pop rax\n");
 		printf(" cmp rax, 0\n");
-		printf(" je .Lelse%d\n", lelse_num);
+		printf(" je .Lelse%d\n", lnum);
 		gen(node->rhs);
-		printf(" jmp .Lend%d\n", lend_num);
-		printf(".Lelse%d:\n", lelse_num);
+		printf(" jmp .Lend%d\n", lnum);
+		printf(".Lelse%d:\n", lnum);
 		gen(node->third_hand);
-		printf(".Lend%d:\n", lend_num);
-		lelse_num++;
-		lend_num++;
+		printf(".Lend%d:\n", lnum);
+		lnum++;
+		return;
+	case ND_WHILE:
+		printf(".Lbegin%d:\n", lnum);
+		gen(node->lhs);
+		printf(" pop rax\n");
+		printf(" cmp rax, 0\n");
+		printf(" je .Lend%d\n", lnum);
+		gen(node->rhs);
+		printf(" jmp .Lbegin%d\n", lnum);
+		printf(".Lend%d:\n", lnum);
+		lnum++;
 		return;
 	}
 
