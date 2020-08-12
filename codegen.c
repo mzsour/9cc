@@ -9,9 +9,9 @@ void gen_lval(Node *node){
 	printf(" push rax\n");
 }
 
-
 // generator
 void gen(Node *node){
+	int i = 0;
 	switch(node->kind){
 	case ND_NUM:
 		printf(" push %d\n", node->val);
@@ -82,6 +82,14 @@ void gen(Node *node){
 		printf(".Lend%d:\n", lnum);
 		lnum++;
 		return;
+	case ND_BLOCK:
+		while(node->block[i] != NULL){
+			gen(node->block[i]);
+			//printf(" pop rax\n");
+			i++;
+		}
+		return;
+
 	case ND_NULL:
 		return;
 	}

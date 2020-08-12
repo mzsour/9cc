@@ -200,7 +200,8 @@ Token *tokenize(char *p){
 		}
 
 		if(*p=='+'||*p=='-'||*p=='*'||*p=='/'||*p=='>'||
-			*p=='<'||*p=='('||*p==')'||*p==';'||*p=='='){
+			*p=='<'||*p=='('||*p==')'||*p==';'||*p=='=' ||
+			*p=='{'||*p=='}'){
 			cur = new_token(TK_RESERVED, cur, p++, 1);
 			continue;
 		}
@@ -337,10 +338,21 @@ Node *expr(){
 Node *stmt(){
 	Node *node;
 
-	if(consume_ctrl(TK_RETURN)){
+	if(consume("{")){
+		int i = 0;
+		node = calloc(1, sizeof(Node));
+		node->kind = ND_BLOCK;
+		while(!consume("}")){
+			Node *n;
+			n = stmt();
+			node->block[i++] = n;
+		}
+		node->block[i] = NULL;
+	} else if(consume_ctrl(TK_RETURN)){
 		node = calloc(1, sizeof(Node));
 		node->kind = ND_RETURN;
 		node->lhs = expr();
+		expect(";");
 	} else if(consume_ctrl(TK_IF)){
 		node = calloc(1, sizeof(Node));
 		if(search_for_token(TK_ELSE)){
@@ -388,6 +400,7 @@ Node *stmt(){
 		node->fourth_hand = stmt();
 	} else {
 		node = expr();
+		expect(";");
 	}
 
 	return node;
@@ -398,7 +411,6 @@ void program(){
 	while(!at_eof()){
 		Node *node;
 		node = stmt();
-		expect(";");
 		code[i++] = node;
 	}
 	code[i] = NULL;
