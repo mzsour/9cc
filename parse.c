@@ -224,26 +224,37 @@ Token *tokenize(char *p){
 Node *primary(){
 	Token *tok = consume_ident();
 	if(tok){
-		Node *node = calloc(1, sizeof(Node));
-		node->kind = ND_LVAR;
+		if(consume("(")){
+			Node *node = calloc(1, sizeof(Node));
+			node->kind = ND_FCALL;
 
-		LVar *lvar = find_lvar(tok);
-		if(lvar){
-			node->offset = lvar->offset;
+			node->name = tok->str;
+			node->len = tok->len;
+			
+			expect(")");
+			return node;
 		} else {
-			lvar = calloc(1, sizeof(LVar));
-			lvar->next = locals;
-			lvar->name = tok->str;
-			lvar->len = tok->len;
-			if(!locals){
-				lvar->offset = 8;
+			Node *node = calloc(1, sizeof(Node));
+			node->kind = ND_LVAR;
+
+			LVar *lvar = find_lvar(tok);
+			if(lvar){
+				node->offset = lvar->offset;
 			} else {
-				lvar->offset = locals->offset + 8;
+				lvar = calloc(1, sizeof(LVar));
+				lvar->next = locals;
+				lvar->name = tok->str;
+				lvar->len = tok->len;
+				if(!locals){
+					lvar->offset = 8;
+				} else {
+					lvar->offset = locals->offset + 8;
+				}
+				node->offset = lvar->offset;
+				locals = lvar;
 			}
-			node->offset = lvar->offset;
-			locals = lvar;
+			return node;
 		}
-		return node;
 	}
 
 	// if next token is '(', '('expr')' should follow.

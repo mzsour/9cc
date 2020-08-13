@@ -89,7 +89,9 @@ void gen(Node *node){
 			i++;
 		}
 		return;
-
+	case ND_FCALL:
+		printf(" call %.*s\n", node->len, node->name);
+		return;
 	case ND_NULL:
 		return;
 	}
