@@ -90,6 +90,37 @@ void gen(Node *node){
 		}
 		return;
 	case ND_FCALL:
+		if(node->args[0] != NULL){
+			gen(node->args[0]);
+			printf(" pop rax\n");
+			printf(" mov rdi, rax\n");
+		}
+		if(node->args[1] != NULL){
+			gen(node->args[1]);
+			printf(" pop rax\n");
+			printf(" mov rsi, rax\n");
+		}
+		if(node->args[2] != NULL){
+			gen(node->args[2]);
+			printf(" pop rax\n");
+			printf(" mov rdx, rax\n");
+		}
+		if(node->args[3] != NULL){
+			gen(node->args[3]);
+			printf(" pop rax\n");
+			printf(" mov rcx, rax\n");
+		}
+		if(node->args[4] != NULL){
+			gen(node->args[4]);
+			printf(" pop rax\n");
+			printf(" mov r8, rax\n");
+		}
+		if(node->args[5] != NULL){
+			gen(node->args[5]);
+			printf(" pop rax\n");
+			printf(" mov r9, rax\n");
+		}
+
 		printf(" call %.*s\n", node->len, node->name);
 		return;
 	case ND_NULL:

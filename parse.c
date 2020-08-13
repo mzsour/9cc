@@ -201,7 +201,7 @@ Token *tokenize(char *p){
 
 		if(*p=='+'||*p=='-'||*p=='*'||*p=='/'||*p=='>'||
 			*p=='<'||*p=='('||*p==')'||*p==';'||*p=='=' ||
-			*p=='{'||*p=='}'){
+			*p=='{'||*p=='}'||*p==','){
 			cur = new_token(TK_RESERVED, cur, p++, 1);
 			continue;
 		}
@@ -225,13 +225,25 @@ Node *primary(){
 	Token *tok = consume_ident();
 	if(tok){
 		if(consume("(")){
+			int i = 0;
 			Node *node = calloc(1, sizeof(Node));
 			node->kind = ND_FCALL;
 
 			node->name = tok->str;
 			node->len = tok->len;
-			
-			expect(")");
+		
+			if(!consume(")")){
+				do{
+					node->args[i++] = expr();
+				} while(consume(",") && i<6);
+				
+				expect(")");
+			}
+
+			while(i < 6){
+				node->args[i] = NULL;
+				i++;
+			}
 			return node;
 		} else {
 			Node *node = calloc(1, sizeof(Node));
