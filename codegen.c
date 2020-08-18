@@ -1,5 +1,7 @@
 #include "9cc.h"
 
+// evaluate variable as left side value.
+// memory address of the variable is pushed.
 void gen_lval(Node *node){
 	if(node->kind != ND_LVAR)
 		error("left side value is not variable");
@@ -16,12 +18,16 @@ void gen(Node *node){
 	case ND_NUM:
 		printf(" push %d\n", node->val);
 		return;
+
+	// evaluate variable as right side value.
+	// the value of the variable is pushed.
 	case ND_LVAR:
 		gen_lval(node);
 		printf(" pop rax\n");
 		printf(" mov rax, [rax]\n");
 		printf(" push rax\n");
 		return;
+
 	case ND_ASSIGN:
 		gen_lval(node->lhs);
 		gen(node->rhs);
@@ -31,6 +37,7 @@ void gen(Node *node){
 		printf(" mov [rax], rdi\n");
 		printf(" push rdi\n");
 		return;
+
 	case ND_RETURN:
 		gen(node->lhs);
 		printf(" pop rax\n");
@@ -38,6 +45,7 @@ void gen(Node *node){
 		printf(" pop rbp\n");
 		printf(" ret\n");
 		return;
+
 	case ND_IF:
 		gen(node->lhs);
 		printf(" pop rax\n");
@@ -46,6 +54,7 @@ void gen(Node *node){
 		gen(node->rhs);
 		printf(".Lend%d:\n", lnum++);
 		return;
+
 	case ND_IFEL:
 		gen(node->lhs);
 		printf(" pop rax\n");
@@ -58,6 +67,7 @@ void gen(Node *node){
 		printf(".Lend%d:\n", lnum);
 		lnum++;
 		return;
+
 	case ND_WHILE:
 		printf(".Lbegin%d:\n", lnum);
 		gen(node->lhs);
@@ -69,6 +79,7 @@ void gen(Node *node){
 		printf(".Lend%d:\n", lnum);
 		lnum++;
 		return;
+
 	case ND_FOR:
 		gen(node->lhs);
 		printf(".Lbegin%d:\n", lnum);
@@ -82,6 +93,7 @@ void gen(Node *node){
 		printf(".Lend%d:\n", lnum);
 		lnum++;
 		return;
+
 	case ND_BLOCK:
 		while(node->block[i] != NULL){
 			gen(node->block[i]);
@@ -89,6 +101,7 @@ void gen(Node *node){
 			i++;
 		}
 		return;
+
 	case ND_FCALL:
 		if(node->args[0] != NULL){
 			gen(node->args[0]);
@@ -123,6 +136,29 @@ void gen(Node *node){
 
 		printf(" call %.*s\n", node->len, node->name);
 		return;
+
+	case ND_FUNCTION:
+		printf("%.*s:\n", node->len, node->name);
+
+		// prologue
+		printf(" push rbp\n");
+		printf(" mov rbp, rsp\n");
+		printf(" sub rsp, 208\n");
+
+		while(node->block[i] != NULL){
+			gen(node->block[i]);
+			//printf(" pop rax\n");
+			i++;
+		}
+
+		//epilogue
+		printf(" pop rax\n");
+		printf(" mov rsp, rbp\n");
+		printf(" pop rbp\n");
+		printf(" ret\n");
+		return;
+
+
 	case ND_NULL:
 		return;
 	}

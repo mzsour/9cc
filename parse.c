@@ -96,6 +96,14 @@ Token *consume_ident(){
 	return res;
 }
 
+Token *expect_ident(){
+	if(token->kind != TK_IDENT)
+		error_at(token->str, "not identifier");
+	Token *res = token;
+	token = token->next;
+	return res;
+}
+
 void expect(char *op){
 	if(token->kind != TK_RESERVED ||
 		strlen(op) != token->len ||
@@ -429,11 +437,39 @@ Node *stmt(){
 	return node;
 }
 
+Node *function(){
+
+	// at top level, code should start with function name.
+	Token *tok = expect_ident();
+	Node *node = calloc(1, sizeof(Node));
+	node->kind = ND_FUNCTION;
+
+	node->name = tok->str;
+	node->len = tok->len;
+
+	// argument is omitted for now.
+	expect("(");
+	while(!consume(")")){
+		token = token->next;
+	}
+
+	expect("{");
+	int i = 0;
+	while(!consume("}")){
+		Node *n;
+		n = stmt();
+		node->block[i++] = n;
+	}
+	node->block[i] = NULL;
+
+	return node;
+}
+
 void program(){
 	int i = 0;
 	while(!at_eof()){
 		Node *node;
-		node = stmt();
+		node = function();
 		code[i++] = node;
 	}
 	code[i] = NULL;
