@@ -135,6 +135,7 @@ void gen(Node *node){
 		}
 
 		printf(" call %.*s\n", node->len, node->name);
+		printf(" push rax\n");
 		return;
 
 	case ND_FUNCTION:
@@ -144,6 +145,42 @@ void gen(Node *node){
 		printf(" push rbp\n");
 		printf(" mov rbp, rsp\n");
 		printf(" sub rsp, 208\n");
+		
+		if(node->args[0] != NULL){
+			gen_lval(node->args[0]);
+			printf(" pop rax\n");
+			printf(" mov [rax], rdi\n");
+		}
+
+		if(node->args[1] != NULL){
+			gen_lval(node->args[1]);
+			printf(" pop rax\n");
+			printf(" mov [rax], rsi\n");
+		}
+		
+		if(node->args[2] != NULL){
+			gen_lval(node->args[2]);
+			printf(" pop rax\n");
+			printf(" mov [rax], rdx\n");
+		}
+
+		if(node->args[3] != NULL){
+			gen_lval(node->args[3]);
+			printf(" pop rax\n");
+			printf(" mov [rax], rcx\n");
+		}
+
+		if(node->args[4] != NULL){
+			gen_lval(node->args[4]);
+			printf(" pop rax\n");
+			printf(" mov [rax], r8\n");
+		}
+
+		if(node->args[5] != NULL){
+			gen_lval(node->args[5]);
+			printf(" pop rax\n");
+			printf(" mov [rax], r9\n");
+		}
 
 		while(node->block[i] != NULL){
 			gen(node->block[i]);

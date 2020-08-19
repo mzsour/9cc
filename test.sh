@@ -68,4 +68,7 @@ assert 6 "main(){sum = 0; for(i=1; i<=3; i=i+1 ) sum = sum +i; sum;}"
 assert 4 "main(){i=1; for(; i<=3;) i = i+1; i;}"
 assert 6 "main(){{m=2; n=3; m*n;}}"
 assert 8 "main(){num = 3; if(num >2){num = num*2; num= num+2;}}"
+assert 4 "main(){incr(3);} incr(x){return x + 1;}"
+assert 120 "main(){factorial(5);}factorial(n){if(n <= 1)return 1; else return n * factorial(n-1);}"
+assert 24 "main(){foo(3, 4, 5);} foo(x, y, z){a = (x+y+z) * 2; return a;}"
 echo OK

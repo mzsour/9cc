@@ -438,6 +438,7 @@ Node *stmt(){
 }
 
 Node *function(){
+	int i, j;
 
 	// at top level, code should start with function name.
 	Token *tok = expect_ident();
@@ -447,14 +448,37 @@ Node *function(){
 	node->name = tok->str;
 	node->len = tok->len;
 
-	// argument is omitted for now.
 	expect("(");
+	j = 0;
 	while(!consume(")")){
-		token = token->next;
+		Token *res = consume_ident();
+
+		Node *n = calloc(1, sizeof(Node));
+		n->kind = ND_LVAR;
+
+		LVar *lvar = find_lvar(tok);
+		if(lvar){
+			node->offset = lvar->offset;
+		} else {
+			lvar = calloc(1, sizeof(LVar));
+			lvar->next = locals;
+			lvar->name = res->str;
+			lvar->len = res->len;
+			if(!locals){
+				lvar->offset = 8;
+			} else {
+				lvar->offset = locals->offset + 8;
+			}
+			n->offset = lvar->offset;
+			locals = lvar;
+		}
+		node->args[j++] = n;
+
+		consume(",");
 	}
 
 	expect("{");
-	int i = 0;
+	i = 0;
 	while(!consume("}")){
 		Node *n;
 		n = stmt();
